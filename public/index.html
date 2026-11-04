@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DeepGram</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0e1621; color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; overflow-x: hidden; }
+        .tg-panel { background-color: #17212b; }
+        .tg-btn { background-color: #2481cc; transition: 0.2s; }
+        .tg-btn:hover { background-color: #1e6ea7; }
+        .tg-input { background-color: #0e1621; border: 1px solid #17212b; color: white; outline: none; }
+        .tg-input:focus { border-color: #2481cc; }
+        .hidden { display: none !important; }
+        .nav-btn { flex: 1; text-align: center; padding: 10px; color: #7d8b99; cursor: pointer; }
+        .nav-btn.active { color: #2481cc; border-bottom: 2px solid #2481cc; }
+        .owned-nft { font-size: 2rem; background: #000; padding: 4px 8px; border-radius: 8px; border: 1px solid #333; display: inline-block; margin: 4px; }
+        .message { max-width: 80%; padding: 8px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 14px; word-wrap: break-word; }
+        .msg-bot { background-color: #182533; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .msg-user { background-color: #2b5278; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-gift { background: linear-gradient(45deg, #17212b, #2481cc); border: 1px solid #2481cc; align-self: center; text-align: center; padding: 12px; border-radius: 12px; margin: 8px auto; width: 60%; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- ЭКРАН 1: Вход -->
+    <div id="auth-screen" class="flex-1 flex flex-col justify-center items-center p-6">
+        <h1 class="text-3xl font-bold text-center mb-8 text-[#2481cc]">DeepGram</h1>
+        <div class="w-full max-w-sm tg-panel p-6 rounded-xl shadow-lg">
+            <input type="email" id="email" placeholder="Email" class="w-full p-3 rounded-lg tg-input mb-3">
+            <input type="password" id="password" placeholder="Пароль" class="w-full p-3 rounded-lg tg-input mb-4">
+            <button id="btn-login" class="w-full text-white p-3 rounded-lg tg-btn font-semibold mb-2">Войти</button>
+            <button id="btn-register" class="w-full text-gray-400 text-sm p-2">Нет аккаунта? Зарегистрироваться</button>
+            <p id="auth-error" class="text-red-500 text-sm mt-3 text-center"></p>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 2: Юзернейм -->
+    <div id="username-screen" class="flex-1 flex flex-col justify-center items-center p-6 hidden">
+        <div class="w-full max-w-sm tg-panel p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-bold mb-2 text-center">Придумайте юзернейм</h2>
+            <p class="text-gray-400 text-sm mb-4 text-center">Только латиница, от 4 до 32 символов</p>
+            <div class="flex items-center mb-4">
+                <span class="text-gray-400 text-lg mr-2">@</span>
+                <input type="text" id="username-input" placeholder="username" class="w-full p-3 rounded-lg tg-input">
+            </div>
+            <button id="btn-set-username" class="w-full text-white p-3 rounded-lg tg-btn font-semibold">Сохранить</button>
+            <p id="username-error" class="text-red-500 text-sm mt-3 text-center"></p>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 3: Главный -->
+    <div id="main-screen" class="flex-1 flex flex-col hidden h-full">
+        <!-- Шапка -->
+        <div class="tg-panel p-4 flex justify-between items-center shadow-md z-10">
+            <h2 class="text-xl font-bold">DeepGram</h2>
+            <div class="flex items-center gap-2">
+                <span id="secret-balance-clicker" class="text-yellow-400 font-bold cursor-pointer select-none"><span id="header-balance">0</span> DC</span>
+                <button id="btn-logout" class="text-sm text-red-500 ml-2">Выйти</button>
+            </div>
+        </div>
+
+        <!-- Вкладки -->
+        <div class="flex tg-panel border-t border-gray-700">
+            <div id="tab-profile" class="nav-btn active">Профиль</div>
+            <div id="tab-chat" class="nav-btn">Чаты</div>
+            <div id="tab-shop" class="nav-btn">Магазин</div>
+        </div>
+
+        <!-- ПРОФИЛЬ -->
+        <div id="content-profile" class="flex-1 overflow-y-auto p-4">
+            <div id="profile-card" class="tg-panel p-6 rounded-xl flex flex-col items-center transition-colors duration-300">
+                <div class="relative">
+                    <div id="profile-avatar" class="w-24 h-24 rounded-full bg-blue-500 flex items-center justify-center text-4xl font-bold mb-4 bg-cover bg-center border-2 border-transparent transition-colors"></div>
+                    <input type="file" id="avatar-upload" accept="image/*" class="hidden">
+                    <button id="btn-upload-avatar" class="absolute bottom-4 right-0 bg-[#2481cc] text-white p-2 rounded-full shadow-lg text-sm">📷</button>
+                </div>
+                <h3 id="display-username" class="text-2xl font-bold text-white">@username</h3>
+                <div class="text-sm text-gray-400 mt-2">Баланс: <span id="profile-balance" class="text-yellow-400 font-bold">0</span> DC</div>
+                
+                <div id="nft-collection" class="mt-4 w-full text-center hidden">
+                    <div class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Коллекция NFT</div>
+                    <div id="nft-list" class="flex justify-center flex-wrap"></div>
+                </div>
+                <button id="btn-bonus" class="mt-6 w-full tg-btn text-white p-3 rounded-lg font-semibold">🎁 Получить бонус (100 DC)</button>
+                <p id="bonus-msg" class="text-green-500 text-sm mt-2 text-center"></p>
+            </div>
+        </div>
+
+        <!-- ЧАТ -->
+        <div id="content-chat" class="flex-1 hidden bg-[#0e1621] flex flex-col">
+            <div id="chat-list-view" class="flex-1 p-4 flex flex-col">
+                <h3 class="text-lg font-bold mb-4">Найти пользователя</h3>
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="search-user-input" placeholder="@username" class="flex-1 p-2 rounded-lg tg-input">
+                    <button id="btn-search-user" class="tg-btn text-white px-4 rounded-lg">Найти</button>
+                </div>
+                <div id="search-results" class="flex flex-col gap-2"></div>
+                <div class="mt-8 border-t border-gray-700 pt-4">
+                    <button id="btn-open-bot" class="w-full tg-panel p-4 rounded-xl flex items-center text-left">
+                        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center mr-3">🤖</div>
+                        <div>
+                            <div class="font-bold">DeepGram</div>
+                            <div class="text-sm text-gray-400">Официальный бот</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <div id="active-chat-view" class="flex-1 flex flex-col hidden">
+                <div class="tg-panel p-3 flex items-center border-b border-gray-700">
+                    <button id="btn-back-to-list" class="text-2xl mr-3">←</button>
+                    <div class="font-bold" id="chat-with-name">Чат</div>
+                    <button id="btn-open-gift" class="ml-auto tg-btn text-white px-3 py-1 rounded text-sm hidden">🎁 Подарить</button>
+                </div>
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col"></div>
+                <div class="p-2 tg-panel flex gap-2">
+                    <input type="text" id="chat-input" placeholder="Сообщение..." class="flex-1 p-2 rounded-lg tg-input text-sm">
+                    <button id="btn-send-msg" class="tg-btn text-white px-4 rounded-lg text-sm font-bold">➤</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- МАГАЗИН -->
+        <div id="content-shop" class="flex-1 overflow-y-auto p-4 hidden">
+            <div id="shop-list" class="grid grid-cols-2 gap-4"></div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА СЕКРЕТНОГО РЕЖИМА -->
+    <div id="secret-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="tg-panel p-6 rounded-xl w-full max-w-xs mx-4">
+            <h3 class="text-lg font-bold mb-4 text-center text-yellow-400">Режим создателя</h3>
+            <input type="number" id="secret-balance-input" placeholder="Введите сумму..." class="w-full p-3 rounded-lg tg-input mb-4">
+            <div class="flex gap-2">
+                <button id="btn-cancel-secret" class="flex-1 bg-gray-600 text-white p-2 rounded-lg text-sm">Отмена</button>
+                <button id="btn-apply-secret" class="flex-1 tg-btn text-white p-2 rounded-lg text-sm">Применить</button>
+            </div>
+            <p id="secret-error" class="text-red-500 text-sm mt-3 text-center"></p>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА ПОДАРКА -->
+    <div id="gift-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="tg-panel p-6 rounded-xl w-full max-w-sm mx-4 max-h-[80vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-4 text-center text-yellow-400">Выберите подарок</h3>
+            <div id="gift-modal-list" class="grid grid-cols-2 gap-2 mb-4"></div>
+            <button id="btn-close-gift-modal" class="w-full bg-gray-600 text-white p-2 rounded-lg text-sm mt-2">Отмена</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+                  </html>
